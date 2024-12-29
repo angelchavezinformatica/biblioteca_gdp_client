@@ -1,5 +1,5 @@
 <script setup lang="ts"></script>
 
-<template>Dashboard</template>
+<template>Catalog</template>
 
 <style scoped lang="sass"></style>

@@ -4,19 +4,19 @@ import { BACKEND_SERVER } from "~/config/api";
 import type { UserI } from "~/types";
 
 export const useAuthStore = defineStore("auth-store", () => {
-  const userToken = useUserTokenStore();
+  const { data, setValue, clearValue } = useStorage({ key: "gdp-bm" });
 
   const isAuth = ref<boolean | null>(null);
   const user = ref<UserI | null>(null);
 
   const fetchUser = async () => {
-    if (userToken.userToken) {
+    if (!data.value) {
       isAuth.value = false;
       return;
     }
 
     const response = await axios.get(`${BACKEND_SERVER}/user/me`, {
-      headers: { Authorization: `Bearer ${userToken.userToken}` },
+      headers: { Authorization: `Bearer ${data.value}` },
     });
 
     if (response.status === 200) {
@@ -32,7 +32,7 @@ export const useAuthStore = defineStore("auth-store", () => {
     });
 
     if (response.status === 200) {
-      userToken.userToken = response.data.token;
+      setValue(response.data.token);
       return { response, isLogged: true };
     }
 
@@ -40,7 +40,10 @@ export const useAuthStore = defineStore("auth-store", () => {
   };
 
   const logout = () => {
-    userToken.userToken = null;
+    console.log("aaaa");
+    isAuth.value = false;
+    user.value = null;
+    clearValue();
   };
 
   return { isAuth, user, login, logout, fetchUser };
