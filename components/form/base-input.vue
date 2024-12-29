@@ -2,7 +2,7 @@
 interface Props {
   name: string;
   label: string;
-  modelValue: string;
+  modelValue?: string;
   required?: boolean;
 }
 defineProps<Props>();
@@ -30,7 +30,7 @@ const isFocused = ref<boolean>(false);
       }`"
     >
       {{ label }}
-      <span v-if="required" className="text-red-500">*</span>
+      <span v-if="required" class="text-red-500">*</span>
     </label>
   </div>
 </template>

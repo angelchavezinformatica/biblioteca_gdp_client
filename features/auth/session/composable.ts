@@ -69,7 +69,11 @@ export function useIndexPage() {
     });
 
     if (response.status === 201)
-      toast.add({ title: "Usuario creado con éxito" });
+      toast.add({
+        title: "Usuario creado con éxito",
+        description:
+          "Por favor, verifica tu correo electrónico para completar el proceso de registro.",
+      });
     else
       toast.add({
         title: "Error",
