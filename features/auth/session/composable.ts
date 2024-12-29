@@ -27,10 +27,12 @@ export function useIndexPage() {
   const handleLogin = async () => {
     try {
       buttonLoginLoading.value = true;
+
       const { response, isLogged } = await authStore.login(
         formData.value.dni,
         formData.value.password
       );
+
       if (isLogged) router.push("/dashboard");
       else {
         toast.add({

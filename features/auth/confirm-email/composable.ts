@@ -11,12 +11,16 @@ export function usePageConfirmEmail() {
   const handleConfirmEmail = async () => {
     confirmButtonLoading.value = true;
 
-    if (!route.query.token)
+    if (!route.query.token) {
       toast.add({
         title: "Error al confirmar cuenta",
         description:
           "No se encontró un token válido para confirmar tu cuenta. Por favor, verifica el enlace en tu correo electrónico e inténtalo nuevamente.",
       });
+
+      confirmButtonLoading.value = false;
+      return;
+    }
 
     const response = await axios.get(
       `${BACKEND_SERVER}/auth/confirm-email?token=${route.query.token}`
