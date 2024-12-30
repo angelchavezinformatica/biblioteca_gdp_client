@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Loader from "~/components/loader.vue";
 import Content from "~/features/dashboard/content.vue";
 import HeaderDasboard from "~/features/dashboard/header.vue";
 import Sidebar from "~/features/dashboard/sidebar.vue";
@@ -22,6 +23,7 @@ onUpdated(() => {
     <Sidebar :isCollapsed="config.collapsed" />
     <Content :isCollapsed="config.collapsed"><slot /></Content>
   </template>
+  <Loader v-else-if="store.isAuth === null" />
 </template>
 
 <style lang="sass">
