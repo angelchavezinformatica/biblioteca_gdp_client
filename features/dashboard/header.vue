@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineEmits(["toogleIsCollapsed"]);
+defineEmits(["toogle"]);
 
 const store = useAuthStore();
 
@@ -8,11 +8,7 @@ const isDropdownOpen = ref<boolean>(false);
 
 <template>
   <header class="Header">
-    <button
-      class="Header-button"
-      @click="$emit('toogleIsCollapsed')"
-      type="button"
-    >
+    <button class="Header-button" @click="$emit('toogle')" type="button">
       <UIcon name="i-heroicons-bars-3-16-solid" class="w-5 h-5 text-white" />
     </button>
     <div class="Header-content cursor-pointer">
@@ -22,14 +18,7 @@ const isDropdownOpen = ref<boolean>(false);
       </button>
     </div>
     <div class="Header-UserInfo-dropdown" v-show="isDropdownOpen">
-      <button
-        @click="
-          () => {
-            console.log('aaa');
-            store.logout();
-          }
-        "
-      >
+      <button @click="store.logout">
         <UIcon name="i-mdi-logout" class="w-5 h-5 text-white" />
         <span>Cerrar Sesión</span>
       </button>

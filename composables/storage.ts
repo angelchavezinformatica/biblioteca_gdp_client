@@ -1,22 +1,17 @@
-import { ref } from "vue";
+import { useLocalStorage } from "@vueuse/core";
 
-interface Options {
-  key: string;
-  defaultValue?: string;
-}
+export const useStorage = <T>(key: string, defaultValue: T) => {
+  const storage = useLocalStorage<T>(key, defaultValue);
+  const data = ref(storage.value);
 
-export const useStorage = (options: Options) => {
-  const value = localStorage.getItem(options.key);
-  const data = ref<string | null>(value || options.defaultValue || null);
-
-  const setValue = (value: string) => {
+  const setValue = (value: T) => {
     data.value = value;
-    localStorage.setItem(options.key, value);
+    storage.value = value;
   };
 
   const clearValue = () => {
     data.value = null;
-    localStorage.removeItem(options.key);
+    storage.value = null;
   };
 
   return { clearValue, data, setValue };

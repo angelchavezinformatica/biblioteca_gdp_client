@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import Header from "~/features/dashboard/header.vue";
+import HeaderDasboard from "~/features/dashboard/header.vue";
 import Sidebar from "~/features/dashboard/sidebar.vue";
 
-const isCollapsed = ref<boolean>(false);
-
+const config = useConfigStore();
 const store = useAuthStore();
 const router = useRouter();
 
@@ -18,8 +17,9 @@ onUpdated(() => {
 
 <template>
   <template v-if="store.isAuth">
-    <Header @toogleIsCollapsed="isCollapsed = !isCollapsed"></Header>
-    <Sidebar :isCollapsed="isCollapsed" />
+    <HeaderDasboard @toogle="config.toggle" />
+    <Sidebar :isCollapsed="config.collapsed" />
+    <slot />
   </template>
 </template>
 

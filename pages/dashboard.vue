@@ -2,6 +2,8 @@
 definePageMeta({ layout: "dashboard-layout" });
 </script>
 
-<template>Dashboard</template>
+<template>
+  <NuxtPage />
+</template>
 
 <style scoped lang="sass"></style>

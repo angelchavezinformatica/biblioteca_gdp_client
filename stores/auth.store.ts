@@ -4,7 +4,7 @@ import { BACKEND_SERVER } from "~/config/api";
 import type { UserI } from "~/types";
 
 export const useAuthStore = defineStore("auth-store", () => {
-  const { data, setValue, clearValue } = useStorage({ key: "gdp-bm" });
+  const { data, setValue, clearValue } = useStorage("gdp-bm", "");
 
   const isAuth = ref<boolean | null>(null);
   const user = ref<UserI | null>(null);
@@ -40,7 +40,6 @@ export const useAuthStore = defineStore("auth-store", () => {
   };
 
   const logout = () => {
-    console.log("aaaa");
     isAuth.value = false;
     user.value = null;
     clearValue();

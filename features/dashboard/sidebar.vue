@@ -10,6 +10,7 @@ const links = [
       label: "Catálogo de libros",
       to: "/dashboard",
       icon: "i-mdi-library-shelves",
+      exact: true,
     },
   ],
   [
@@ -17,11 +18,13 @@ const links = [
       label: "Préstamos",
       to: "/dashboard/loan",
       icon: "i-mdi-book",
+      exact: true,
     },
     {
       label: "Historial",
       to: "/dashboard/loan-history",
       icon: "i-mdi-book-clock",
+      exact: true,
     },
   ],
   [
@@ -29,18 +32,21 @@ const links = [
       label: "Libros",
       to: "/dashboard/books",
       icon: "i-mdi-bookshelf",
+      exact: true,
     },
   ],
   [
     {
       label: "Donaciones",
       to: "/dashboard/donations",
+      exact: true,
       icon: "i-mdi-gift",
     },
     {
       label: "Donadores",
-      to: "/dashboard/donor",
+      to: "/dashboard/donors",
       icon: "i-material-symbols-light-person-raised-hand-rounded",
+      exact: true,
     },
   ],
   [
@@ -48,6 +54,7 @@ const links = [
       label: "Usuarios",
       to: "/dashboard/users",
       icon: "i-mdi-account",
+      exact: true,
     },
   ],
 ];
