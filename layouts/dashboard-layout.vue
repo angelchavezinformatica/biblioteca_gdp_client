@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Content from "~/features/dashboard/content.vue";
 import HeaderDasboard from "~/features/dashboard/header.vue";
 import Sidebar from "~/features/dashboard/sidebar.vue";
 
@@ -19,7 +20,7 @@ onUpdated(() => {
   <template v-if="store.isAuth">
     <HeaderDasboard @toogle="config.toggle" />
     <Sidebar :isCollapsed="config.collapsed" />
-    <slot />
+    <Content :isCollapsed="config.collapsed"><slot /></Content>
   </template>
 </template>
 

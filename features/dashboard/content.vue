@@ -1,0 +1,33 @@
+<script setup lang="ts">
+interface Props {
+  isCollapsed: boolean;
+}
+defineProps<Props>();
+
+const { width } = useWindowSize();
+</script>
+
+<template>
+  <main
+    :class="`Content${width < 600 || isCollapsed ? ' Content--collapsed' : ''}`"
+  >
+    <slot />
+  </main>
+</template>
+
+<style scoped lang="sass">
+.Content
+    position: fixed
+    top: 56px
+    left: 200px
+    display: flex
+    flex-direction: column
+    padding: 1rem
+    width: calc( 100% - 200px )
+    max-height: calc( 100vh - 56px )
+    overflow: auto
+
+.Content--collapsed
+    left: 48px
+    width: calc( 100% - 48px )
+</style>
