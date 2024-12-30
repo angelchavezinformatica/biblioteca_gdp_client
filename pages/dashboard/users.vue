@@ -197,8 +197,9 @@ const handleAcceptEdit = async () => {
           handleFilter();
         "
         icon="i-tabler-circle-x-filled"
-        >Limpiar filtro</Button
       >
+        Limpiar filtro
+      </Button>
     </template>
     <template #search-button>
       <Button
