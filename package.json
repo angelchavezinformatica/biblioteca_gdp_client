@@ -10,15 +10,21 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@coreui/coreui": "^5.2.0",
+    "@coreui/coreui-pro": "^5.8.0",
+    "@coreui/vue": "^5.4.1",
+    "@coreui/vue-pro": "^5.9.0",
     "@nuxt/ui": "^2.20.0",
     "@pinia/nuxt": "^0.9.0",
     "@vueuse/nuxt": "^12.2.0",
     "axios": "^1.7.9",
+    "date-fns": "^2.30.0",
     "nuxt": "^3.15.0",
     "pinia": "^2.3.0",
     "sass": "^1.83.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "v-calendar": "^3.1.2",
     "vue": "latest",
     "vue-router": "latest"
   },

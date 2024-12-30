@@ -10,7 +10,7 @@ export enum UserRoleE {
 
 export type BookConditionT = "NEW" | "GOOD" | "FAIR" | "DAMAGED" | "BAD";
 
-export enum BookCOnditionE {
+export enum BookConditionE {
   NEW = "NEW",
   GOOD = "GOOD",
   FAIR = "FAIR",
@@ -54,7 +54,7 @@ export interface BookI {
 export type Copy = {
   id: number;
   code: string | null;
-  condition: string;
+  condition: BookConditionT;
 };
 
 export type ReservationStatusT =

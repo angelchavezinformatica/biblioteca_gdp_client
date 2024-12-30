@@ -58,6 +58,15 @@ export default {
           5: "hsl(var(--chart-5))",
         },
       },
+      animation: {
+        spin: "spin 1s linear infinite",
+      },
+      keyframes: {
+        spin: {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

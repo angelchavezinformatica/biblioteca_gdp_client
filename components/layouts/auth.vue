@@ -32,7 +32,7 @@
 
 <style scoped lang="sass">
 .App
-  background-color: black
+  background-color: black !important
   position: relative
   z-index: 1
 
