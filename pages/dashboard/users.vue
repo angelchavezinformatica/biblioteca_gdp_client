@@ -2,16 +2,23 @@
 import axios from "axios";
 import { BACKEND_SERVER } from "~/config/api";
 import DashboardContainer from "~/features/dashboard/dashboard-container.vue";
-import type { PaginatedI, AllDataUserI } from "~/types";
+import {
+  type PaginatedI,
+  type AllDataUserI,
+  type UserRoleT,
+  UserRoleE,
+} from "~/types";
 
 const { data } = useAuthStore();
+const toast = useToast();
 const paginatedUsers = ref<PaginatedI<AllDataUserI>>();
 const isNotAuthorized = ref(false);
+const url = ref(`${BACKEND_SERVER}/user/all`);
 
 const fetchUsers = async (page: number, limit: number) => {
   try {
     const response = await axios.get(
-      `${BACKEND_SERVER}/user/all?page=${page}&limit=${limit}`,
+      `${url.value}?page=${page}&limit=${limit}`,
       {
         headers: { Authorization: `Bearer ${data}` },
       }
@@ -36,14 +43,12 @@ const columns = [
   { key: "actions", label: "Acciones" },
 ];
 
-const handleSelectRow = (row: AllDataUserI) => {};
-
 const items = (row: AllDataUserI) => [
   [
     {
       label: "Editar",
       icon: "i-mdi-edit",
-      click: () => handleSelectRow(row),
+      click: () => handleEditSelectRow(row),
     },
   ],
 ];
@@ -63,6 +68,106 @@ watch(limitPerPage, async () => {
   if (currentPage.value !== 1) currentPage.value = 1;
   else await fetchUsers(currentPage.value, Number(limitPerPage.value));
 });
+
+// Filter
+
+const selectedFilter = ref<string>("Todo");
+const filters = [
+  "Todo",
+  "DNI",
+  "Nombres",
+  "Apellidos",
+  "Teléfono",
+  "Rol",
+  "Correo",
+];
+
+const searchInput = ref("");
+
+const handleFilter = async () => {
+  if (selectedFilter.value === "Todo") {
+    url.value = `${BACKEND_SERVER}/user/all`;
+  } else if (selectedFilter.value === "DNI") {
+    if (!searchInput.value || !/^\d+$/.test(searchInput.value)) {
+      toast.add({
+        title: "Error",
+        description: "El DNI solo debe contener caracteres numéricos",
+      });
+      return;
+    }
+    url.value = `${BACKEND_SERVER}/search/user-by-dni/${searchInput.value}`;
+  } else if (selectedFilter.value === "Nombres") {
+    url.value = `${BACKEND_SERVER}/search/user-by-name/${searchInput.value}`;
+  } else if (selectedFilter.value === "Apellidos") {
+    url.value = `${BACKEND_SERVER}/search/user-by-lastname/${searchInput.value}`;
+  } else if (selectedFilter.value === "Teléfono") {
+    if (!searchInput.value || !/^\d+$/.test(searchInput.value)) {
+      toast.add({
+        title: "Error",
+        description: "El teléfono solo debe contener caracteres numéricos",
+      });
+      return;
+    }
+    url.value = `${BACKEND_SERVER}/search/user-by-phonenumber/${searchInput.value}`;
+  } else if (selectedFilter.value === "Rol") {
+    url.value = `${BACKEND_SERVER}/search/user-by-role/${searchInput.value}`;
+  } else if (selectedFilter.value === "Correo") {
+    url.value = `${BACKEND_SERVER}/search/user-by-email/${searchInput.value}`;
+  }
+
+  if (currentPage.value !== 1) currentPage.value = 1;
+  else await fetchUsers(currentPage.value, Number(limitPerPage.value));
+};
+
+// Edit Modal
+
+const showEditModal = ref(false);
+const userToEdit = ref<AllDataUserI>();
+const editFormData = ref<{ role: UserRoleT; isDisabled: "true" | "false" }>({
+  role: UserRoleE.READER,
+  isDisabled: "true",
+});
+
+const handleEditSelectRow = (row: AllDataUserI) => {
+  showEditModal.value = true;
+  userToEdit.value = row;
+
+  editFormData.value.role = row.role;
+  editFormData.value.isDisabled = row.isDisabled ? "true" : "false";
+};
+
+const handleAcceptEdit = async () => {
+  if (!userToEdit.value) return;
+
+  const response = await axios.put(
+    `${BACKEND_SERVER}/user/${userToEdit.value.id}`,
+    {
+      role: editFormData.value.role,
+      isDisabled: editFormData.value.isDisabled === "true",
+    },
+    {
+      headers: { Authorization: `Bearer ${data}` },
+    }
+  );
+
+  if (response.status === 200) {
+    toast.add({
+      title: "Éxito",
+      description: "El usuario ha sido editado correctamente",
+    });
+    await fetchUsers(currentPage.value, Number(limitPerPage.value));
+  } else {
+    toast.add({
+      title: "Error",
+      description: "Ha ocurrido un error al editar el usuario",
+    });
+  }
+
+  showEditModal.value = false;
+  userToEdit.value = undefined;
+  editFormData.value.role = UserRoleE.READER;
+  editFormData.value.isDisabled = "true";
+};
 </script>
 
 <template>
@@ -71,6 +176,39 @@ watch(limitPerPage, async () => {
     <template #title>Usuarios</template>
     <template #description> Administra tus usuarios </template>
     <template #title-table>Usuarios</template>
+
+    <template #search-filter>
+      <USelectMenu v-model="selectedFilter" :options="filters" />
+    </template>
+    <template #search-input>
+      <UInput
+        v-model="searchInput"
+        name="filter"
+        placeholder="Buscar"
+        :disabled="selectedFilter === 'Todo'"
+      />
+    </template>
+    <template #search-reset-filter>
+      <Button
+        v-show="selectedFilter !== 'Todo' || searchInput !== ''"
+        @click="
+          selectedFilter = 'Todo';
+          searchInput = '';
+          handleFilter();
+        "
+        icon="i-tabler-circle-x-filled"
+        >Limpiar filtro</Button
+      >
+    </template>
+    <template #search-button>
+      <Button
+        @click="handleFilter"
+        icon="i-heroicons-magnifying-glass"
+        :disabled="!searchInput && selectedFilter !== 'Todo'"
+      >
+        Filtrar
+      </Button>
+    </template>
 
     <UTable
       :loading="paginatedUsers === undefined || !paginatedUsers.data"
@@ -201,6 +339,31 @@ watch(limitPerPage, async () => {
           { value: 50, label: 'Mostrar 50' },
         ]"
       ></USelect>
+    </template>
+
+    <template #modals>
+      <Modal v-model="showEditModal" @handle-accept="handleAcceptEdit">
+        <template #header-title>Editar Usuario</template>
+        <template #header-description>
+          Modifica el rol e inabilita usuarios.
+        </template>
+
+        <USelect
+          v-model="editFormData.role"
+          :options="[
+            { value: UserRoleE.READER, label: 'Lector' },
+            { value: UserRoleE.LIBRARIAN, label: 'Bibliotecario' },
+            { value: UserRoleE.ADMIN, label: 'Administrador' },
+          ]"
+        />
+        <USelect
+          v-model="editFormData.isDisabled"
+          :options="[
+            { value: 'false', label: 'Habilitado' },
+            { value: 'true', label: 'Inhabilitado' },
+          ]"
+        />
+      </Modal>
     </template>
   </DashboardContainer>
 </template>

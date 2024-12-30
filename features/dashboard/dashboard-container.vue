@@ -11,7 +11,20 @@
       </p>
     </section>
     <div class="Outer-container bg-secondary-bg rounded-lg p-4 md:p-6">
-      <slot name="search" />
+      <div
+        className="flex flex-col space-y-2 mb-4 sm:flex-row sm:space-y-0 sm:space-x-2"
+      >
+        <slot name="search-filter" />
+        <div className="relative flex-grow">
+          <slot name="search-input" />
+        </div>
+        <div className="flex space-x-2">
+          <slot name="search-reset-filter" />
+        </div>
+        <div className="flex space-x-2">
+          <slot name="search-button" />
+        </div>
+      </div>
       <div class="Inner-container bg-[#0e0e0e] rounded-lg p-4 md:p-6 mt-4">
         <section class="Dashboard-container">
           <div class="border-b border-gray-100 py-1">
@@ -37,6 +50,8 @@
         </div>
       </div>
     </div>
+
+    <slot name="modals" />
   </div>
 </template>
 
