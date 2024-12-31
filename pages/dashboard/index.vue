@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import axios from "axios";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import DatePicker from "~/components/date-picker.vue";
 import { BACKEND_SERVER } from "~/config/api";
+import ActionsContainer from "~/features/dashboard/components/actions-container.vue";
+import SearchContainer from "~/features/dashboard/components/search-container.vue";
 import DashboardContainer from "~/features/dashboard/dashboard-container.vue";
-import { type PaginatedI, type BookI } from "~/types";
+import { type PaginatedI, type BookI, type Copy } from "~/types";
 
 const { data } = useAuthStore();
-// const toast = useToast();
+const shoppingCard = useShoppingCardStore();
+const toast = useToast();
 const paginatedBooks = ref<PaginatedI<BookI>>();
 const isNotAuthorized = ref(false);
 const url = ref(`${BACKEND_SERVER}/book`);
@@ -40,7 +46,7 @@ const items = (row: BookI) => [
     {
       label: "Reservar",
       icon: "i-mdi-edit",
-      click: () => handleReservateSelectRow(row),
+      click: () => handleAddToCardSelectRow(row),
     },
   ],
 ];
@@ -68,7 +74,7 @@ const searchInput = ref("");
 
 const handleFilter = async () => {
   if (selectedFilter.value === "Todo") {
-    url.value = `${BACKEND_SERVER}/user/book`;
+    url.value = `${BACKEND_SERVER}/book`;
   } else if (selectedFilter.value === "Titulo") {
     url.value = `${BACKEND_SERVER}/search/books-by-title/${searchInput.value}`;
   } else if (selectedFilter.value === "Autor") {
@@ -83,20 +89,123 @@ const handleFilter = async () => {
   else await fetchBooks(currentPage.value, Number(limitPerPage.value));
 };
 
+// Add to card modal
+
+const showAddToCardModal = ref(false);
+const bookToAddToCard = ref<BookI>();
+
+const selectedBookId = ref<string>();
+const copiesOfSelectedBook = ref<Copy[]>();
+const copiesOfSelectedBookOptions = ref<{ value: string; label: string }[]>([]);
+
+const disabledAcceptButtonAddToCardModal = computed(
+  () => !selectedBookId.value
+);
+
+const parseCopy = (copy: Copy) => {
+  return {
+    value: String(copy.id),
+    label: `Código: ${copy.code} - Condición: ${
+      copy.condition === "NEW"
+        ? "Nuevo"
+        : copy.condition === "GOOD"
+        ? "Bueno"
+        : copy.condition === "FAIR"
+        ? "Regular"
+        : copy.condition === "DAMAGED"
+        ? "Dañado"
+        : "Malo"
+    }`,
+  };
+};
+
+const handleAddToCardSelectRow = async (row: BookI) => {
+  showAddToCardModal.value = true;
+  bookToAddToCard.value = row;
+
+  const response = await axios.get<PaginatedI<Copy>>(
+    `${BACKEND_SERVER}/copy/${row.id}`,
+    { headers: { Authorization: `Bearer ${data}` } }
+  );
+
+  if (response.status === 200) {
+    copiesOfSelectedBook.value = response.data.data;
+    response.data.data.forEach((copy) => {
+      if (shoppingCard.copies.filter((_copy) => _copy.id === copy.id).length)
+        return;
+
+      copiesOfSelectedBookOptions.value.push(parseCopy(copy));
+    });
+  }
+};
+
+const handleAcceptToAddNewBook = () => {
+  if (
+    !bookToAddToCard.value &&
+    !selectedBookId.value &&
+    !copiesOfSelectedBook.value
+  )
+    return;
+
+  const copy = copiesOfSelectedBook.value?.find(
+    (copy) => copy.id === Number(selectedBookId.value)
+  );
+
+  if (copy) shoppingCard.addCopy(copy);
+
+  showAddToCardModal.value = false;
+  bookToAddToCard.value = undefined;
+  selectedBookId.value = undefined;
+  copiesOfSelectedBook.value = undefined;
+  copiesOfSelectedBookOptions.value = [];
+};
+
 // Reservation modal
 
 const showReservationModal = ref(false);
-const bookToEdit = ref<BookI>();
-// const reservationFormData = ref();
+const reservationDate = ref<Date>(new Date());
 
-const handleReservateSelectRow = (row: BookI) => {
+const disabledShoppingCardButton = computed(
+  () => shoppingCard.copies.length <= 0
+);
+
+const handleClickOnShoppingCardButton = () => {
   showReservationModal.value = true;
-  bookToEdit.value = row;
-
-  // TODO: Reset form data
 };
 
-// const handleAcceptReservation = async () => {};
+const handleRemoveCopy = (copy: Copy) => {
+  shoppingCard.removeCopy(copy);
+
+  if (!shoppingCard.copies.length) showReservationModal.value = false;
+};
+
+const handleReservation = async () => {
+  if (!shoppingCard.copies.length) return;
+
+  try {
+    const response = await axios.post(
+      `${BACKEND_SERVER}/reservation`,
+      {
+        copies: shoppingCard.copies.map((copy) => copy.id),
+        dueDate: reservationDate.value.toISOString(),
+      },
+      { headers: { Authorization: `Bearer ${data}` } }
+    );
+    if (response.status === 201)
+      toast.add({
+        title: "Reserva exitosa",
+        description: "La reserva se ha realizado con éxito",
+      });
+  } catch {
+    toast.add({
+      title: "Error de reserva",
+      description: "Ha ocurrido un error al realizar la reserva",
+    });
+  }
+
+  showReservationModal.value = false;
+  shoppingCard.clearShoppingCard();
+};
 </script>
 
 <template>
@@ -108,38 +217,64 @@ const handleReservateSelectRow = (row: BookI) => {
     </template>
     <template #title-table>Catálogo de Libros</template>
 
-    <template #search-filter>
-      <USelectMenu v-model="selectedFilter" :options="filters" />
+    <template #search>
+      <SearchContainer>
+        <template #search-filter>
+          <USelectMenu v-model="selectedFilter" :options="filters" />
+        </template>
+        <template #search-input>
+          <UInput
+            v-model="searchInput"
+            name="filter"
+            placeholder="Buscar"
+            :disabled="selectedFilter === 'Todo'"
+          />
+        </template>
+        <template #search-reset-filter>
+          <Button
+            v-show="selectedFilter !== 'Todo' || searchInput !== ''"
+            @click="
+              selectedFilter = 'Todo';
+              searchInput = '';
+              handleFilter();
+            "
+            icon="i-tabler-circle-x-filled"
+          >
+            Limpiar filtro
+          </Button>
+        </template>
+        <template #search-button>
+          <Button
+            @click="handleFilter"
+            icon="i-heroicons-magnifying-glass"
+            :disabled="!searchInput && selectedFilter !== 'Todo'"
+          >
+            Filtrar
+          </Button>
+        </template>
+      </SearchContainer>
     </template>
-    <template #search-input>
-      <UInput
-        v-model="searchInput"
-        name="filter"
-        placeholder="Buscar"
-        :disabled="selectedFilter === 'Todo'"
-      />
-    </template>
-    <template #search-reset-filter>
-      <Button
-        v-show="selectedFilter !== 'Todo' || searchInput !== ''"
-        @click="
-          selectedFilter = 'Todo';
-          searchInput = '';
-          handleFilter();
-        "
-        icon="i-tabler-circle-x-filled"
-      >
-        Limpiar filtro
-      </Button>
-    </template>
-    <template #search-button>
-      <Button
-        @click="handleFilter"
-        icon="i-heroicons-magnifying-glass"
-        :disabled="!searchInput && selectedFilter !== 'Todo'"
-      >
-        Filtrar
-      </Button>
+
+    <template #actions>
+      <ActionsContainer>
+        <template #right>
+          <UChip
+            :text="shoppingCard.copies.length"
+            size="2xl"
+            :show="shoppingCard.copies.length > 0"
+          >
+            <UButton
+              icon="i-tabler-shopping-cart-filled"
+              size="lg"
+              color="primary"
+              :ui="{ rounded: 'rounded-full' }"
+              variant="solid"
+              @click="handleClickOnShoppingCardButton"
+              :disabled="disabledShoppingCardButton"
+            />
+          </UChip>
+        </template>
+      </ActionsContainer>
     </template>
 
     <UTable
@@ -248,9 +383,70 @@ const handleReservateSelectRow = (row: BookI) => {
     </template>
 
     <template #modals>
-      <!-- <UModal v-if="showReservationModal" @handle-accept="handleAcceptReservation">
+      <Modal
+        v-model="showAddToCardModal"
+        :disabledAcceptButton="disabledAcceptButtonAddToCardModal"
+        @handle-accept="handleAcceptToAddNewBook"
+      >
+        <template #header-title>Agregar copia de libro</template>
+        <template #header-description>
+          Agrega una copia del libro &quot;{{ bookToAddToCard?.title }}&quot;
+        </template>
 
-      </UModal> -->
+        <USelect
+          v-model="selectedBookId"
+          :options="copiesOfSelectedBookOptions"
+          placeholder="Selecciona una copia"
+        />
+      </Modal>
+      <Modal
+        v-model="showReservationModal"
+        :disabledAcceptButton="disabledShoppingCardButton"
+        @handle-accept="handleReservation"
+      >
+        <template #header-title>Confirmar reserva</template>
+        <template #header-description>
+          Seleccione el día y hora de recojo, y confirme la reserva.
+        </template>
+
+        <div
+          class="max-h-52 overflow-y-auto p-4 rounded-lg shadow-md outline outline-white outline-2 flex gap-4 flex-col"
+        >
+          <div
+            v-for="copy in shoppingCard.copies"
+            :key="copy.id"
+            class="flex items-center justify-between p-3 rounded-lg shadow-sm outline outline-yellow-600 outline-1"
+          >
+            <p class="text-white font-medium">
+              {{ parseCopy(copy).label }}
+            </p>
+            <UButton
+              class="cursor-pointer text-red-600"
+              variant="ghost"
+              icon="i-mdi-delete-forever"
+              @click="handleRemoveCopy(copy)"
+            />
+          </div>
+        </div>
+
+        <div class="flex">
+          <UPopover :popper="{ placement: 'bottom-start' }">
+            <UButton
+              icon="i-heroicons-calendar-days-20-solid"
+              :label="format(reservationDate, 'd MMM, yyy', { locale: es })"
+            />
+
+            <template #panel="{ close }">
+              <DatePicker
+                v-model="reservationDate"
+                :min-date="new Date()"
+                is-required
+                @close="close"
+              />
+            </template>
+          </UPopover>
+        </div>
+      </Modal>
     </template>
   </DashboardContainer>
 </template>

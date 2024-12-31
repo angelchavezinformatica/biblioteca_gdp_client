@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps({
   modelValue: { type: Boolean, required: true },
+  disabledAcceptButton: { type: Boolean },
 });
 
 const emit = defineEmits(["update:modelValue", "handleAccept"]);
@@ -24,7 +25,11 @@ const closeModal = () => {
 
       <div class="modal-footer">
         <button @click="closeModal" class="modal-close-btn">Cancelar</button>
-        <button @click="$emit('handleAccept')" class="modal-accept-btn">
+        <button
+          @click="$emit('handleAccept')"
+          class="modal-accept-btn"
+          :disabled="disabledAcceptButton"
+        >
           Aceptar
         </button>
       </div>
