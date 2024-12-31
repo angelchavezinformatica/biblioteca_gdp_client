@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from "axios";
 import { BACKEND_SERVER } from "~/config/api";
+import SearchContainer from "~/features/dashboard/components/search-container.vue";
 import DashboardContainer from "~/features/dashboard/dashboard-container.vue";
 import {
   type PaginatedI,
@@ -58,7 +59,9 @@ const items = (row: AllDataUserI) => [
 const currentPage = ref(1);
 const limitPerPage = ref<string>("10");
 
-callOnce(() => fetchUsers(currentPage.value, Number(limitPerPage.value)));
+onMounted(async () => {
+  await fetchUsers(currentPage.value, Number(limitPerPage.value));
+});
 
 watch(currentPage, async (newCurrentPage) => {
   await fetchUsers(newCurrentPage, Number(limitPerPage.value));
@@ -177,38 +180,42 @@ const handleAcceptEdit = async () => {
     <template #description> Administra tus usuarios </template>
     <template #title-table>Usuarios</template>
 
-    <template #search-filter>
-      <USelectMenu v-model="selectedFilter" :options="filters" />
-    </template>
-    <template #search-input>
-      <UInput
-        v-model="searchInput"
-        name="filter"
-        placeholder="Buscar"
-        :disabled="selectedFilter === 'Todo'"
-      />
-    </template>
-    <template #search-reset-filter>
-      <Button
-        v-show="selectedFilter !== 'Todo' || searchInput !== ''"
-        @click="
-          selectedFilter = 'Todo';
-          searchInput = '';
-          handleFilter();
-        "
-        icon="i-tabler-circle-x-filled"
-      >
-        Limpiar filtro
-      </Button>
-    </template>
-    <template #search-button>
-      <Button
-        @click="handleFilter"
-        icon="i-heroicons-magnifying-glass"
-        :disabled="!searchInput && selectedFilter !== 'Todo'"
-      >
-        Filtrar
-      </Button>
+    <template #search>
+      <SearchContainer>
+        <template #search-filter>
+          <USelectMenu v-model="selectedFilter" :options="filters" />
+        </template>
+        <template #search-input>
+          <UInput
+            v-model="searchInput"
+            name="filter"
+            placeholder="Buscar"
+            :disabled="selectedFilter === 'Todo'"
+          />
+        </template>
+        <template #search-reset-filter>
+          <Button
+            v-show="selectedFilter !== 'Todo' || searchInput !== ''"
+            @click="
+              selectedFilter = 'Todo';
+              searchInput = '';
+              handleFilter();
+            "
+            icon="i-tabler-circle-x-filled"
+          >
+            Limpiar filtro
+          </Button>
+        </template>
+        <template #search-button>
+          <Button
+            @click="handleFilter"
+            icon="i-heroicons-magnifying-glass"
+            :disabled="!searchInput && selectedFilter !== 'Todo'"
+          >
+            Filtrar
+          </Button>
+        </template>
+      </SearchContainer>
     </template>
 
     <UTable

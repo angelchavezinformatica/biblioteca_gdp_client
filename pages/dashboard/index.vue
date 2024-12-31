@@ -56,7 +56,9 @@ const items = (row: BookI) => [
 const currentPage = ref(1);
 const limitPerPage = ref<string>("10");
 
-callOnce(() => fetchBooks(currentPage.value, Number(limitPerPage.value)));
+onMounted(async () => {
+  await fetchBooks(currentPage.value, Number(limitPerPage.value));
+});
 
 watch(currentPage, async (newCurrentPage) => {
   await fetchBooks(newCurrentPage, Number(limitPerPage.value));
