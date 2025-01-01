@@ -133,7 +133,7 @@ export interface Loan {
   bookId: number;
 }
 
-export interface DonorsI {
+export interface DonorI {
   id: number;
   name: string;
   email: string | null;
@@ -156,4 +156,4 @@ export interface AllDataUserI extends UserI {
   isDisabled: boolean;
 }
 
-export type Item = BookI | Reservation | Loan | DonorsI | DonationsI;
+export type Item = BookI | Reservation | Loan | DonorI | DonationsI;
