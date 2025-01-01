@@ -49,6 +49,7 @@ const {
         label="DNI"
         v-model="formData.dni"
         placeholder="Ingresa tu número de DNI"
+        light
         required
       />
       <div v-else class="flex gap-4 h-auto">
@@ -58,6 +59,7 @@ const {
           label="DNI"
           v-model="formData.dni"
           placeholder="Ingresa tu número de DNI"
+          light
           required
         />
         <div class="h-7 w-7">
@@ -78,6 +80,7 @@ const {
           label="Nombre"
           v-model="formData.names"
           placeholder="Ingresa tus nombres"
+          light
           required
         />
         <FormBaseInput
@@ -85,6 +88,7 @@ const {
           label="Apellidos"
           v-model="formData.lastName"
           placeholder="Ingresa tus apellidos"
+          light
           required
         />
         <FormBaseInput
@@ -92,6 +96,7 @@ const {
           label="Correo Electrónico"
           v-model="formData.email"
           placeholder="Ingresa tu correo electrónico"
+          light
           required
           type="email"
         />
@@ -100,6 +105,7 @@ const {
           label="Teléfono"
           v-model="formData.phoneNumber"
           placeholder="Ingresa tu número de teléfono"
+          light
           type="tel"
         />
       </template>
@@ -108,6 +114,7 @@ const {
         label="Contraseña"
         v-model="formData.password"
         placeholder="Ingresa tu contraseña"
+        light
         type="password"
         required
       />

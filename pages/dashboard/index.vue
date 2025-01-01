@@ -45,7 +45,7 @@ const items = (row: BookI) => [
   [
     {
       label: "Reservar",
-      icon: "i-mdi-edit",
+      icon: "i-mdi-book-plus",
       click: () => handleAddToCardSelectRow(row),
     },
   ],
@@ -266,7 +266,7 @@ const handleReservation = async () => {
             :show="shoppingCard.copies.length > 0"
           >
             <UButton
-              icon="i-tabler-shopping-cart-filled"
+              icon="i-mdi-plus"
               size="lg"
               color="primary"
               :ui="{ rounded: 'rounded-full' }"

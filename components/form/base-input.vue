@@ -4,6 +4,7 @@ interface Props {
   label: string;
   modelValue?: string;
   required?: boolean;
+  light?: boolean;
 }
 defineProps<Props>();
 
@@ -15,7 +16,9 @@ const isFocused = ref<boolean>(false);
     <input
       :id="name"
       :name="name"
-      class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:border-none focus:ring-2 focus:outline-gray-400 bg-transparent"
+      :class="`w-full px-3 py-1.5 border border-gray-300 rounded-md focus:border-none focus:ring-2 focus:outline-gray-400 bg-transparent ${
+        light ? 'text-black' : 'text-white'
+      }`"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       @focus="isFocused = true"
@@ -25,8 +28,8 @@ const isFocused = ref<boolean>(false);
     />
     <label
       :for="name"
-      :class="`absolute left-3 top-2 -translate-y-6 scale-90 text-black transition-all duration-300 transform bg-white px-1 ${
-        isFocused || modelValue ? '' : 'text-gray-500'
+      :class="`absolute left-3 top-2 -translate-y-6 scale-90 transition-all duration-300 transform px-1 ${
+        light ? 'bg-white text-black' : 'bg-[#0e0e0e] text-white'
       }`"
     >
       {{ label }}

@@ -25,6 +25,7 @@ defineEmits(["update:modelValue", "update:dni", "change-password"]);
         :value="dni"
         @input="$emit('update:dni', $event)"
         placeholder="Ingresa tu número de DNI"
+        light
         required
       />
 

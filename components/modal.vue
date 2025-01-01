@@ -2,6 +2,7 @@
 defineProps({
   modelValue: { type: Boolean, required: true },
   disabledAcceptButton: { type: Boolean },
+  loading: { type: Boolean },
 });
 
 const emit = defineEmits(["update:modelValue", "handleAccept"]);
@@ -25,13 +26,14 @@ const closeModal = () => {
 
       <div class="modal-footer">
         <button @click="closeModal" class="modal-close-btn">Cancelar</button>
-        <button
+        <Button
           @click="$emit('handleAccept')"
           class="modal-accept-btn"
           :disabled="disabledAcceptButton"
+          :loading="loading"
         >
           Aceptar
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -79,6 +81,7 @@ const closeModal = () => {
 .modal-footer
   display: flex
   justify-content: flex-end
+  flex-direction: column
   gap: 10px
   margin-top: 20px
 
@@ -90,6 +93,8 @@ const closeModal = () => {
   padding: 10px 20px
   cursor: pointer
   transition: background-color 0.3s ease
+  width: 100%
+  border-radius: 9999px !important
 
 .modal-close-btn:hover
   background-color: #c0c0c0
