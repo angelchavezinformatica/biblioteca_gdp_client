@@ -34,6 +34,14 @@ body {
   background-color: black !important;
 }
 
+table tbody tr {
+  background-color: transparent !important;
+}
+
+table tbody tr td {
+  background-color: transparent !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

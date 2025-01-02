@@ -5,6 +5,7 @@ import { es } from "date-fns/locale";
 import { BACKEND_SERVER } from "~/config/api";
 import SearchContainer from "~/features/dashboard/components/search-container.vue";
 import DashboardContainer from "~/features/dashboard/dashboard-container.vue";
+import { transformCondition } from "~/transforms/copy-condition";
 import {
   ReservationStatusE,
   type PaginatedI,
@@ -33,7 +34,7 @@ const fetchReservations = async (page: number, limit: number) => {
 const columns = [
   { key: "id", label: "ID" },
   { key: "created", label: "Fecha de reserva" },
-  { key: "dueDate", label: "Fecha de Retorno" },
+  { key: "dueDate", label: "Fecha de recojo" },
   { key: "status", label: "Estado" },
   { key: "actions", label: "Acciones" },
 ];
@@ -47,6 +48,11 @@ const items = (row: ReservationI) => [
     },
   ],
 ];
+
+const expand = ref({
+  openedRows: [],
+  row: {},
+});
 
 // Filter
 
@@ -169,6 +175,8 @@ const handleAcceptCancelReservation = async () => {
       "
       :columns="columns"
       :rows="paginatedReservations?.data"
+      v-model:expand="expand"
+      :multiple-expand="false"
     >
       <template #id-header="{ column }">
         <span class="text-white">{{ column.label }}</span>
@@ -245,6 +253,90 @@ const handleAcceptCancelReservation = async () => {
             </template>
           </UDropdown>
         </template>
+      </template>
+
+      <template #expand="{ row }">
+        <div class="p-4 flex flex-col gap-2">
+          <div
+            class="flex flex-col space-y-4 w-full"
+            v-for="copy in row.copies"
+            :key="copy.id"
+          >
+            <!-- Información del ejemplar -->
+            <div
+              class="p-4 border rounded-lg shadow"
+              style="border-color: #ffffff"
+            >
+              <h3 class="text-lg font-semibold text-white">
+                Código: {{ copy.code }}
+              </h3>
+              <p class="text-sm text-gray-300">
+                Condición: {{ transformCondition(copy.condition) }}
+              </p>
+
+              <!-- Ubicación -->
+              <div class="mt-2" v-if="copy.location">
+                <h4 class="text-md font-medium text-gray-200">Ubicación</h4>
+                <p class="text-sm text-gray-300">
+                  Estante: {{ copy.location.shelf || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Color del estante: {{ copy.location.shelfColor || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Nivel del estante: {{ copy.location.shelfLevel || "N/A" }}
+                </p>
+              </div>
+
+              <!-- Editorial -->
+              <div class="mt-2" v-if="copy.publisher">
+                <h4 class="text-md font-medium text-gray-200">Editorial</h4>
+                <p class="text-sm text-gray-300">
+                  Nombre: {{ copy.publisher.name }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  País: {{ copy.publisher.country || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Dirección: {{ copy.publisher.address || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Teléfono: {{ copy.publisher.phoneNumber || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Sitio Web: {{ copy.publisher.website || "N/A" }}
+                </p>
+              </div>
+
+              <!-- Información del libro -->
+              <div class="mt-2">
+                <h4 class="text-md font-medium text-gray-200">Libro</h4>
+                <p class="text-sm text-gray-300">
+                  Título: {{ copy.book.title }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Páginas: {{ copy.book.pages }}
+                </p>
+                <p class="text-sm text-gray-300" v-if="copy.book.category">
+                  Categoría: {{ copy.book.category }}
+                </p>
+                <p class="text-sm text-gray-300" v-if="copy.book.subcategory">
+                  Subcategoría: {{ copy.book.subcategory }}
+                </p>
+
+                <!-- Autores -->
+                <div class="mt-2" v-if="copy.book.authors.length">
+                  <h5 class="text-sm font-medium text-gray-200">Autores</h5>
+                  <ul class="list-disc list-inside text-sm text-gray-300">
+                    <li v-for="author in copy.book.authors" :key="author.id">
+                      {{ author.name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </template>
     </UTable>
 
