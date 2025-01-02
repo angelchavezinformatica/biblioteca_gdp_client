@@ -4,6 +4,8 @@ interface Props {
 }
 defineProps<Props>();
 
+const { width } = useWindowSize();
+
 const links = [
   [
     {
@@ -61,10 +63,14 @@ const links = [
 </script>
 
 <template>
-  <aside :class="`Sidebar${isCollapsed ? ' Sidebar--collapsed' : ''}`">
+  <aside
+    :class="`Sidebar${
+      isCollapsed ? ' Sidebar--collapsed' : ' Sidebar--not-collapsed'
+    }${width >= 770 ? ' Sidebar--desktop' : ' Sidebar--mobile'}`"
+  >
     <div className="Sidebar-logo">
       <img
-        :src="isCollapsed ? '/logo-muni.png' : '/logo-muni2.png'"
+        :src="isCollapsed || width < 770 ? '/logo-muni.png' : '/logo-muni2.png'"
         alt="Logo Municipalidad de Guadalupe"
       />
     </div>
@@ -101,9 +107,16 @@ const links = [
     flex-direction: column
     width: 100%
 
-.Sidebar--collapsed
+.Sidebar--desktop.Sidebar--collapsed
   width: 3.2rem
 
   .Sidebar-logo
     width: 100%
+
+.Sidebar--mobile.Sidebar--collapsed
+  left: -9999px
+
+.Sidebar--mobile.Sidebar--not-collapsed
+  left: 0
+  width: 200px
 </style>

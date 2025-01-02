@@ -9,7 +9,9 @@ const { width } = useWindowSize();
 
 <template>
   <main
-    :class="`Content${width < 600 || isCollapsed ? ' Content--collapsed' : ''}`"
+    :class="`Content${isCollapsed ? ' Content--collapsed' : ''}${
+      width >= 770 ? ' Content--desktop' : ' Content--mobile'
+    }`"
   >
     <slot />
   </main>
@@ -28,7 +30,11 @@ const { width } = useWindowSize();
   max-height: calc( 100vh - 56px )
   overflow: auto
 
-.Content--collapsed
+.Content--desktop.Content--collapsed
   left: 48px
   width: calc( 100% - 48px )
+
+.Content--mobile
+  left: 0
+  width: calc( 100% )
 </style>
