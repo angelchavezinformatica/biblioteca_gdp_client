@@ -15,15 +15,15 @@ const links = [
   ],
   [
     {
-      label: "Préstamos",
-      to: "/dashboard/loan",
-      icon: "i-mdi-book",
+      label: "Mis Reservas",
+      to: "/dashboard/reservation",
+      icon: "i-mdi-book-clock",
       exact: true,
     },
     {
-      label: "Historial",
-      to: "/dashboard/loan-history",
-      icon: "i-mdi-book-clock",
+      label: "Mis Préstamos",
+      to: "/dashboard/loan",
+      icon: "i-mdi-book",
       exact: true,
     },
   ],

@@ -63,18 +63,18 @@ export type ReservationStatusT =
   | "CANCELED"
   | "EXPIRED";
 
-export enum ReservationStatus {
+export enum ReservationStatusE {
   PENDING = "PENDING",
   PICKED_UP = "PICKED_UP",
   CANCELED = "CANCELED",
   EXPIRED = "EXPIRED",
 }
 
-export interface Reservation {
+export interface ReservationI {
   id: number;
   created: string;
   dueDate: string;
-  status: ReservationStatus;
+  status: ReservationStatusT;
   copies: {
     id: number;
     code: string;
@@ -155,5 +155,3 @@ export interface AllDataUserI extends UserI {
   emailVerified: boolean;
   isDisabled: boolean;
 }
-
-export type Item = BookI | Reservation | Loan | DonorI | DonationsI;
