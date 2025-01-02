@@ -42,13 +42,21 @@ const links = [
     {
       label: "Donaciones",
       to: "/dashboard/donations",
-      exact: true,
       icon: "i-mdi-gift",
+      exact: true,
     },
     {
       label: "Donadores",
       to: "/dashboard/donors",
       icon: "i-material-symbols-light-person-raised-hand-rounded",
+      exact: true,
+    },
+  ],
+  user?.role !== "READER" && [
+    {
+      label: "Todas las reservas",
+      to: "/dashboard/all-reservations",
+      icon: "i-mdi-book-clock",
       exact: true,
     },
   ],
