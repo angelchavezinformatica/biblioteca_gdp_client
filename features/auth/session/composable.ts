@@ -66,7 +66,9 @@ export function useIndexPage() {
       names: formData.value.names,
       lastName: formData.value.lastName,
       email: formData.value.email,
-      phoneNumber: formData.value.phoneNumber,
+      phoneNumber: formData.value.phoneNumber
+        ? formData.value.phoneNumber
+        : null,
       password: formData.value.password,
     });
 

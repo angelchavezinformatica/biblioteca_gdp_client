@@ -4,6 +4,7 @@ interface Props {
 }
 defineProps<Props>();
 
+const { user } = useAuthStore();
 const { width } = useWindowSize();
 
 const links = [
@@ -29,7 +30,7 @@ const links = [
       exact: true,
     },
   ],
-  [
+  user?.role !== "READER" && [
     {
       label: "Libros",
       to: "/dashboard/books",
@@ -37,7 +38,7 @@ const links = [
       exact: true,
     },
   ],
-  [
+  user?.role !== "READER" && [
     {
       label: "Donaciones",
       to: "/dashboard/donations",
@@ -51,7 +52,7 @@ const links = [
       exact: true,
     },
   ],
-  [
+  user?.role === "ADMIN" && [
     {
       label: "Usuarios",
       to: "/dashboard/users",
@@ -60,6 +61,8 @@ const links = [
     },
   ],
 ];
+
+const filteredLinks = links.filter((link) => link !== false);
 </script>
 
 <template>
@@ -74,7 +77,7 @@ const links = [
         alt="Logo Municipalidad de Guadalupe"
       />
     </div>
-    <UVerticalNavigation :links="links" class="Sidebar-nav" />
+    <UVerticalNavigation :links="filteredLinks" class="Sidebar-nav" />
   </aside>
 </template>
 
