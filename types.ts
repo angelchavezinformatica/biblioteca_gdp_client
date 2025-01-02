@@ -94,8 +94,6 @@ export interface ReservationI {
       category: string | null;
     };
   }[];
-  bookTitle: string;
-  bookId: number;
 }
 
 export enum LoanStatus {
@@ -105,7 +103,7 @@ export enum LoanStatus {
   CANCELLED = "CANCELLED",
 }
 
-export interface Loan {
+export interface LoanI {
   id: number;
   loanDate: string;
   dueDate: string;
@@ -129,8 +127,6 @@ export interface Loan {
       category: string | null;
     };
   }[];
-  bookTitle: string;
-  bookId: number;
 }
 
 export interface DonorI {

@@ -123,7 +123,8 @@ const handleAcceptCancelReservation = async () => {
       toast.add({
         title: "Reserva cancelada con éxito",
       });
-      await fetchReservations(currentPage.value, Number(limitPerPage.value));
+      if (currentPage.value === paginatedReservations.value?.lastPage)
+        await fetchReservations(currentPage.value, Number(limitPerPage.value));
     }
   } catch {
     toast.add({

@@ -59,6 +59,12 @@ const links = [
       icon: "i-mdi-book-clock",
       exact: true,
     },
+    {
+      label: "Todas los préstamos",
+      to: "/dashboard/all-loans",
+      icon: "i-mdi-book",
+      exact: true,
+    },
   ],
   user?.role === "ADMIN" && [
     {

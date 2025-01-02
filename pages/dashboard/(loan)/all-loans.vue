@@ -2,32 +2,29 @@
 import axios from "axios";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import DatePicker from "~/components/date-picker.vue";
 import { BACKEND_SERVER } from "~/config/api";
 import SearchContainer from "~/features/dashboard/components/search-container.vue";
 import DashboardContainer from "~/features/dashboard/dashboard-container.vue";
+import { transformLoanStatus } from "~/transforms/loan-status";
 import { transformCondition } from "~/transforms/copy-condition";
-import {
-  ReservationStatusE,
-  type PaginatedI,
-  type ReservationI,
-  type ReservationStatusT,
-} from "~/types";
+import { type PaginatedI, type LoanI, LoanStatus } from "~/types";
 
 const { data } = useAuthStore();
 const toast = useToast();
-const paginatedReservations = ref<PaginatedI<ReservationI>>();
+const paginatedLoans = ref<PaginatedI<LoanI>>();
 const isNotAuthorized = ref(false);
-const url = ref(`${BACKEND_SERVER}/reservation`);
+const url = ref(`${BACKEND_SERVER}/loan`);
 
-const fetchReservations = async (page: number, limit: number) => {
+const fetchLoans = async (page: number, limit: number) => {
   try {
     const response = await axios.get(
       `${url.value}?page=${page}&limit=${limit}`,
-      { headers: { Authorization: `Bearer ${data}` } }
+      {
+        headers: { Authorization: `Bearer ${data}` },
+      }
     );
 
-    if (response.status === 200) paginatedReservations.value = response.data;
+    if (response.status === 200) paginatedLoans.value = response.data;
   } catch {
     isNotAuthorized.value = true;
   }
@@ -35,34 +32,21 @@ const fetchReservations = async (page: number, limit: number) => {
 
 const columns = [
   { key: "id", label: "ID" },
-  { key: "created", label: "Fecha de reserva" },
-  { key: "dueDate", label: "Fecha de recojo" },
+  { key: "loanDate", label: "Fecha de Préstamo" },
+  { key: "dueDate", label: "Fecha de devolución" },
   { key: "status", label: "Estado" },
   { key: "actions", label: "Acciones" },
 ];
 
-const items = (row: ReservationI, status: string) => {
-  let _items = [
-    [
-      {
-        label: "Editar Estado",
-        icon: "i-mdi-edit",
-        click: () => handleEditStatusSelectedRow(row),
-      },
-    ],
-  ];
-
-  if (status === "PENDING")
-    _items.push([
-      {
-        label: "Convertir a reserva",
-        icon: "i-mdi-book-clock",
-        click: () => handleConvertToLoanSelectedRow(row),
-      },
-    ]);
-
-  return _items;
-};
+const items = (row: LoanI) => [
+  [
+    {
+      label: "Editar estado",
+      icon: "i-mdi-edit",
+      click: () => handleEditStatusSelectRow(row),
+    },
+  ],
+];
 
 const expand = ref({
   openedRows: [],
@@ -75,137 +59,95 @@ const currentPage = ref(1);
 const limitPerPage = ref<string>("10");
 
 onMounted(async () => {
-  await fetchReservations(currentPage.value, Number(limitPerPage.value));
+  await fetchLoans(currentPage.value, Number(limitPerPage.value));
 });
 
 watch(currentPage, async (newCurrentPage) => {
-  await fetchReservations(newCurrentPage, Number(limitPerPage.value));
+  await fetchLoans(newCurrentPage, Number(limitPerPage.value));
 });
 
 watch(limitPerPage, async () => {
   if (currentPage.value !== 1) currentPage.value = 1;
-  else await fetchReservations(currentPage.value, Number(limitPerPage.value));
+  else await fetchLoans(currentPage.value, Number(limitPerPage.value));
 });
 
 // Filter
 
 const selectedFilter = ref<string>("Todo");
-const filters = ["Todo", "Cancelados", "Pendientes", "Recogidos", "Expirados"];
+const filters = ["Todo", "Activo", "Devuelto", "Vencido", "Cancelado"];
 
 const handleFilter = async () => {
   if (selectedFilter.value === "Todo") {
-    url.value = `${BACKEND_SERVER}/reservation/me`;
-  } else if (selectedFilter.value === "Cancelados") {
-    url.value = `${BACKEND_SERVER}/search/reservation-by-status/${ReservationStatusE.CANCELED}`;
-  } else if (selectedFilter.value === "Pendientes") {
-    url.value = `${BACKEND_SERVER}/search/reservation-by-status/${ReservationStatusE.PENDING}`;
-  } else if (selectedFilter.value === "Recogidos") {
-    url.value = `${BACKEND_SERVER}/search/reservation-by-status/${ReservationStatusE.PICKED_UP}`;
-  } else if (selectedFilter.value === "Expirados") {
-    url.value = `${BACKEND_SERVER}/search/reservation-by-status/${ReservationStatusE.EXPIRED}`;
+    url.value = `${BACKEND_SERVER}/loan`;
+  } else if (selectedFilter.value === "Activo") {
+    url.value = `${BACKEND_SERVER}/search/loan-by-status/${LoanStatus.ACTIVE}`;
+  } else if (selectedFilter.value === "Devuelto") {
+    url.value = `${BACKEND_SERVER}/search/loan-by-status/${LoanStatus.RETURNED}`;
+  } else if (selectedFilter.value === "Vencido") {
+    url.value = `${BACKEND_SERVER}/search/loan-by-status/${LoanStatus.OVERDUE}`;
+  } else if (selectedFilter.value === "Cancelado") {
+    url.value = `${BACKEND_SERVER}/search/loan-by-status/${LoanStatus.CANCELLED}`;
   }
 
   if (currentPage.value !== 1) currentPage.value = 1;
-  else await fetchReservations(currentPage.value, Number(limitPerPage.value));
+  else await fetchLoans(currentPage.value, Number(limitPerPage.value));
 };
 
-const selectedReservation = ref<ReservationI>();
-const loadingButton = ref(false);
-
-// Edit Reservation
+// Edit status
 
 const showEditStatusModal = ref(false);
-const editStatusFormData = ref<{ status: ReservationStatusT }>();
+const selectedLoan = ref<LoanI>();
+const loadingAcceptButton = ref(false);
 
-const handleEditStatusSelectedRow = (row: ReservationI) => {
+const editStatus = ref<LoanStatus>();
+
+const handleEditStatusSelectRow = (row: LoanI) => {
+  selectedLoan.value = row;
   showEditStatusModal.value = true;
-  selectedReservation.value = row;
-
-  editStatusFormData.value = { status: row.status };
+  editStatus.value = row.status;
 };
 
-const handleAcceptEditStatusReservation = async () => {
-  loadingButton.value = true;
+const handleAcceptEditStatusButton = async () => {
+  loadingAcceptButton.value = true;
 
   try {
     const response = await axios.put(
-      `${BACKEND_SERVER}/reservation/${selectedReservation.value?.id}`,
+      `${BACKEND_SERVER}/loan/${selectedLoan.value?.id}`,
       {
-        dueDate: selectedReservation.value?.dueDate,
-        status: editStatusFormData.value?.status,
-        copies: selectedReservation.value?.copies.map((copy) => copy.id),
+        status: editStatus.value,
+        dueDate: selectedLoan.value?.dueDate,
+        copies: selectedLoan.value?.copies.map((copy) => copy.id),
       },
       { headers: { Authorization: `Bearer ${data}` } }
     );
 
     if (response.status === 200) {
       toast.add({
-        title: "Reserva actualizada con éxito",
+        title: "Éxito",
+        description: "El préstamo ha sido actualizado con éxito",
       });
-      if (currentPage.value === paginatedReservations.value?.lastPage)
-        await fetchReservations(currentPage.value, Number(limitPerPage.value));
+
+      if (currentPage.value === paginatedLoans.value?.lastPage)
+        await fetchLoans(currentPage.value, Number(limitPerPage.value));
     }
   } catch {
     toast.add({
-      title: "Error al actualizar el estado de la reserva",
+      title: "Error al actualizar el estado",
     });
   }
 
-  loadingButton.value = false;
-  selectedReservation.value = undefined;
+  loadingAcceptButton.value = false;
   showEditStatusModal.value = false;
-};
-
-// Convert to loan
-
-const showConvertToLoanModal = ref(false);
-const reservationDate = ref<Date>(new Date());
-
-const handleConvertToLoanSelectedRow = (row: ReservationI) => {
-  showConvertToLoanModal.value = true;
-  selectedReservation.value = row;
-
-  reservationDate.value = new Date();
-};
-
-const handleAcceptConvertToLoan = async () => {
-  loadingButton.value = true;
-
-  try {
-    const response = await axios.put(
-      `${BACKEND_SERVER}/reservation/to-loan`,
-      {
-        reservationId: selectedReservation.value?.id,
-        dueDate: reservationDate.value.toISOString(),
-        copies: selectedReservation.value?.copies.map((copy) => copy.id),
-      },
-      { headers: { Authorization: `Bearer ${data}` } }
-    );
-
-    if (response.status === 200) {
-      toast.add({
-        title: "Reserva convertida a préstamo con éxito",
-      });
-
-      await fetchReservations(currentPage.value, Number(limitPerPage.value));
-    }
-  } catch {
-    toast.add({
-      title: "Error al convertir la reserva a préstamo",
-    });
-  }
-
-  loadingButton.value = false;
-  showConvertToLoanModal.value = false;
+  selectedLoan.value = undefined;
 };
 </script>
 
 <template>
   <NotAuthorized v-if="isNotAuthorized" path="/dashboard" />
   <DashboardContainer v-else>
-    <template #title>Reservas</template>
-    <template #description> Administra las reservas </template>
-    <template #title-table>Todas las reservas</template>
+    <template #title>Préstamos</template>
+    <template #description> Revisa todos los préstamos </template>
+    <template #title-table>Historial de préstamos</template>
 
     <template #search>
       <SearchContainer>
@@ -233,18 +175,16 @@ const handleAcceptConvertToLoan = async () => {
     </template>
 
     <UTable
-      :loading="
-        paginatedReservations === undefined || !paginatedReservations.data
-      "
+      :loading="paginatedLoans === undefined || !paginatedLoans.data"
       :columns="columns"
-      :rows="paginatedReservations?.data"
+      :rows="paginatedLoans?.data"
       v-model:expand="expand"
       :multiple-expand="false"
     >
       <template #id-header="{ column }">
         <span class="text-white">{{ column.label }}</span>
       </template>
-      <template #created-header="{ column }">
+      <template #loanDate-header="{ column }">
         <span class="text-white">{{ column.label }}</span>
       </template>
       <template #dueDate-header="{ column }">
@@ -274,9 +214,9 @@ const handleAcceptConvertToLoan = async () => {
       <template #id-data="{ row }">
         <span class="text-white text-left">{{ row.id }}</span>
       </template>
-      <template #created-data="{ row }">
+      <template #loanDate-data="{ row }">
         <span class="text-white text-left">
-          {{ format(new Date(row.created), "dd-MM-yyyy", { locale: es }) }}
+          {{ format(new Date(row.loanDate), "dd-MM-yyyy", { locale: es }) }}
         </span>
       </template>
       <template #dueDate-data="{ row }">
@@ -286,19 +226,11 @@ const handleAcceptConvertToLoan = async () => {
       </template>
       <template #status-data="{ row }">
         <span class="text-white text-left">
-          {{
-            row.status === "PENDING"
-              ? "Pendiente"
-              : row.status === "PICKED_UP"
-              ? "Recogido"
-              : row.status === "CANCELED"
-              ? "Cancelado"
-              : "Expirado"
-          }}
+          {{ transformLoanStatus(row.status) }}
         </span>
       </template>
       <template #actions-data="{ row }">
-        <UDropdown :items="items(row, row.status)">
+        <UDropdown :items="items(row)">
           <UButton
             color="gray"
             variant="ghost"
@@ -306,9 +238,7 @@ const handleAcceptConvertToLoan = async () => {
           />
 
           <template #item="{ item }">
-            <span class="truncate text-black">
-              {{ item.label }}
-            </span>
+            <span class="truncate text-black">{{ item.label }}</span>
 
             <UIcon
               :name="item.icon"
@@ -404,13 +334,13 @@ const handleAcceptConvertToLoan = async () => {
     </UTable>
 
     <template #current-page>{{ currentPage }}</template>
-    <template #total-pages>{{ paginatedReservations?.lastPage }}</template>
+    <template #total-pages>{{ paginatedLoans?.lastPage }}</template>
 
-    <template #pagination v-if="paginatedReservations">
+    <template #pagination v-if="paginatedLoans">
       <UPagination
         v-model="currentPage"
         :page-count="Number(limitPerPage)"
-        :total="paginatedReservations.total"
+        :total="paginatedLoans.total"
       >
       </UPagination>
     </template>
@@ -430,52 +360,22 @@ const handleAcceptConvertToLoan = async () => {
     <template #modals>
       <Modal
         v-model="showEditStatusModal"
-        :loading="loadingButton"
-        @handle-accept="handleAcceptEditStatusReservation"
+        :loading="loadingAcceptButton"
+        @handle-accept="handleAcceptEditStatusButton"
       >
-        <template #header-title>Editar Reserva</template>
-        <template #header-description> Edita el estado de la reserva </template>
+        <template #header-title>Editar estado de préstamo</template>
+        <template #header-description> Edita el estado del préstamo </template>
 
         <USelect
-          v-if="editStatusFormData"
-          v-model="editStatusFormData.status"
+          v-if="editStatus"
+          v-model="editStatus"
           :options="[
-            { value: ReservationStatusE.PENDING, label: 'Pendiente' },
-            { value: ReservationStatusE.PICKED_UP, label: 'Recogido' },
-            { value: ReservationStatusE.EXPIRED, label: 'Expirado' },
-            { value: ReservationStatusE.CANCELED, label: 'Cancelado' },
+            { value: LoanStatus.ACTIVE, label: 'Activo' },
+            { value: LoanStatus.RETURNED, label: 'Devuelto' },
+            { value: LoanStatus.CANCELLED, label: 'Cancelado' },
+            { value: LoanStatus.OVERDUE, label: 'Vencido' },
           ]"
         ></USelect>
-      </Modal>
-      <Modal
-        v-model="showConvertToLoanModal"
-        :loading="loadingButton"
-        @handle-accept="handleAcceptConvertToLoan"
-      >
-        <template #header-title>Convertir a préstamo</template>
-        <template #header-description>
-          Convierte la reserva a préstamo
-        </template>
-
-        <p class="text-white font-bold">Elije la fecha de devolución</p>
-
-        <div class="flex">
-          <UPopover :popper="{ placement: 'bottom-start' }">
-            <UButton
-              icon="i-heroicons-calendar-days-20-solid"
-              :label="format(reservationDate, 'd MMM, yyy', { locale: es })"
-            />
-
-            <template #panel="{ close }">
-              <DatePicker
-                v-model="reservationDate"
-                :min-date="new Date()"
-                is-required
-                @close="close"
-              />
-            </template>
-          </UPopover>
-        </div>
       </Modal>
     </template>
   </DashboardContainer>
