@@ -5,10 +5,10 @@ import { es } from "date-fns/locale";
 import { BACKEND_SERVER } from "~/config/api";
 import SearchContainer from "~/features/dashboard/components/search-container.vue";
 import DashboardContainer from "~/features/dashboard/dashboard-container.vue";
+import { transformCondition } from "~/transforms/copy-condition";
 import { type PaginatedI, type DonationsI } from "~/types";
 
 const { data } = useAuthStore();
-const toast = useToast();
 const paginatedDonations = ref<PaginatedI<DonationsI>>();
 const isNotAuthorized = ref(false);
 const url = ref(`${BACKEND_SERVER}/donation`);
@@ -37,15 +37,10 @@ const columns = [
   { key: "actions", label: "Acciones" },
 ];
 
-const items = (row: DonationsI) => [
-  [
-    {
-      label: "Editar",
-      icon: "i-mdi-edit",
-      click: () => handleEditSelectRow(row),
-    },
-  ],
-];
+const expand = ref({
+  openedRows: [],
+  row: {},
+});
 
 // Pagination
 
@@ -68,7 +63,13 @@ watch(limitPerPage, async () => {
 // Filter
 
 const selectedFilter = ref<string>("Todo");
-const filters = ["Todo", "Descripción", "Donador", "Código de copia"];
+const filters = [
+  "Todo",
+  "Descripción",
+  "Donador",
+  "Código de copia",
+  "Título de libro",
+];
 
 const searchInput = ref("");
 
@@ -81,15 +82,13 @@ const handleFilter = async () => {
     url.value = `${BACKEND_SERVER}/search/donation-by-donor/${searchInput.value}`;
   } else if (selectedFilter.value === "Código de copia") {
     url.value = `${BACKEND_SERVER}/search/donation-by-copycode/${searchInput.value}`;
+  } else if (selectedFilter.value === "Título de libro") {
+    url.value = `${BACKEND_SERVER}/search/donation-by-book/${searchInput.value}`;
   }
 
   if (currentPage.value !== 1) currentPage.value = 1;
   else await fetchDonations(currentPage.value, Number(limitPerPage.value));
 };
-
-// Edit Modal
-
-const handleEditSelectRow = (row: DonationsI) => {};
 </script>
 
 <template>
@@ -141,6 +140,8 @@ const handleEditSelectRow = (row: DonationsI) => {};
       :loading="paginatedDonations === undefined || !paginatedDonations.data"
       :columns="columns"
       :rows="paginatedDonations?.data"
+      v-model:expand="expand"
+      :multiple-expand="false"
     >
       <template #id-header="{ column }">
         <span class="text-white">{{ column.label }}</span>
@@ -155,9 +156,6 @@ const handleEditSelectRow = (row: DonationsI) => {};
         <span class="text-white">{{ column.label }}</span>
       </template>
       <template #donorEmail-header="{ column }">
-        <span class="text-white">{{ column.label }}</span>
-      </template>
-      <template #actions-header="{ column }">
         <span class="text-white">{{ column.label }}</span>
       </template>
 
@@ -192,23 +190,89 @@ const handleEditSelectRow = (row: DonationsI) => {};
       <template #donorEmail-data="{ row }">
         <span class="text-white text-left">{{ row.donor?.email }}</span>
       </template>
-      <template #actions-data="{ row }">
-        <UDropdown :items="items(row)">
-          <UButton
-            color="gray"
-            variant="ghost"
-            icon="i-heroicons-ellipsis-horizontal-20-solid"
-          />
 
-          <template #item="{ item }">
-            <span class="truncate text-black">{{ item.label }}</span>
+      <template #expand="{ row }">
+        <div class="p-4 flex flex-col gap-2">
+          <div
+            class="flex flex-col space-y-4 w-full"
+            v-for="copy in row.copies"
+            :key="copy.id"
+          >
+            <!-- Información del ejemplar -->
+            <div
+              class="p-4 border rounded-lg shadow"
+              style="border-color: #ffffff"
+            >
+              <h3 class="text-lg font-semibold text-white">
+                Código: {{ copy.code }}
+              </h3>
+              <p class="text-sm text-gray-300">
+                Condición: {{ transformCondition(copy.condition) }}
+              </p>
 
-            <UIcon
-              :name="item.icon"
-              class="flex-shrink-0 h-4 w-4 text-black dark:text-gray-500 ms-auto"
-            />
-          </template>
-        </UDropdown>
+              <!-- Ubicación -->
+              <div class="mt-2" v-if="copy.location">
+                <h4 class="text-md font-medium text-gray-200">Ubicación</h4>
+                <p class="text-sm text-gray-300">
+                  Estante: {{ copy.location.shelf || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Color del estante: {{ copy.location.shelfColor || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Nivel del estante: {{ copy.location.shelfLevel || "N/A" }}
+                </p>
+              </div>
+
+              <!-- Editorial -->
+              <div class="mt-2" v-if="copy.publisher">
+                <h4 class="text-md font-medium text-gray-200">Editorial</h4>
+                <p class="text-sm text-gray-300">
+                  Nombre: {{ copy.publisher.name }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  País: {{ copy.publisher.country || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Dirección: {{ copy.publisher.address || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Teléfono: {{ copy.publisher.phoneNumber || "N/A" }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Sitio Web: {{ copy.publisher.website || "N/A" }}
+                </p>
+              </div>
+
+              <!-- Información del libro -->
+              <div class="mt-2">
+                <h4 class="text-md font-medium text-gray-200">Libro</h4>
+                <p class="text-sm text-gray-300">
+                  Título: {{ copy.book.title }}
+                </p>
+                <p class="text-sm text-gray-300">
+                  Páginas: {{ copy.book.pages }}
+                </p>
+                <p class="text-sm text-gray-300" v-if="copy.book.category">
+                  Categoría: {{ copy.book.category }}
+                </p>
+                <p class="text-sm text-gray-300" v-if="copy.book.subcategory">
+                  Subcategoría: {{ copy.book.subcategory }}
+                </p>
+
+                <!-- Autores -->
+                <div class="mt-2" v-if="copy.book.authors.length">
+                  <h5 class="text-sm font-medium text-gray-200">Autores</h5>
+                  <ul class="list-disc list-inside text-sm text-gray-300">
+                    <li v-for="author in copy.book.authors" :key="author.id">
+                      {{ author.name }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </template>
     </UTable>
 
@@ -235,8 +299,6 @@ const handleEditSelectRow = (row: DonationsI) => {};
         ]"
       ></USelect>
     </template>
-
-    <template #modals></template>
   </DashboardContainer>
 </template>
 
